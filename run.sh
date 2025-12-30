@@ -103,6 +103,7 @@ sweagent run \
     --env.repo.github_url "$REPO_URL" \
     --env.repo.base_commit "$BASE_COMMIT" \
     --problem_statement.path "$PROBLEM_STATEMENT_FILE" \
+    --problem_statement.id "$INSTANCE_ID" \
     --output_dir "$OUTPUT_DIR" \
     --env.deployment.image "python:3.12"
 
