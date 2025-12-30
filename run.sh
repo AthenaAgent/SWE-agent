@@ -100,6 +100,8 @@ echo "Running SWE-agent..."
 sweagent run \
     --config "$CONFIG_PATH" \
     --agent.model.name "$MODEL_NAME" \
+    --agent.model.per_instance_cost_limit 0.0 \
+    --agent.model.total_cost_limit 0.0 \
     --env.repo.github_url "$REPO_URL" \
     --env.repo.base_commit "$BASE_COMMIT" \
     --problem_statement.path "$PROBLEM_STATEMENT_FILE" \
