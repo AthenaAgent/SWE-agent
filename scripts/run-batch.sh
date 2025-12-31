@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script to generate prediction files for a slice of instances from AthenaAgent42/ansible-swe-bench-pro dataset
-# Usage: ./run-batch.sh [start_index] [end_index] [model_name] [config_path]
+# Usage: ./run-batch.sh [start_index] [end_index] [model_name] [config_path] [base_url]
 
 set -e  # Exit on any error
 
@@ -10,6 +10,7 @@ START_INDEX=${1:-0}  # Default to first instance
 END_INDEX=${2:-1}    # Default to process just one instance (exclusive)
 MODEL_NAME=${3:-"gpt-4o"}  # Default model
 CONFIG_PATH=${4:-"config/default.yaml"}  # Default config
+BASE_URL=${5:-""}  # Optional custom base URL for OpenAI-compatible endpoint
 
 # Dataset information
 DATASET_NAME="AthenaAgent42/ansible-swe-bench-pro"
@@ -25,8 +26,11 @@ echo "Instance Range: [$START_INDEX, $END_INDEX)"
 echo "Total Instances to Process: $((END_INDEX - START_INDEX))"
 echo "Model: $MODEL_NAME"
 echo "Config: $CONFIG_PATH"
+if [ -n "$BASE_URL" ]; then
+    echo "Base URL: $BASE_URL"
+fi
 echo "Output Directory: $OUTPUT_DIR"
-echo "======================================"
+echo "====================================="
 
 # Validate indices
 if [ "$START_INDEX" -ge "$END_INDEX" ]; then
@@ -138,17 +142,34 @@ print(data['problem_statement'])
     echo "Running SWE-agent..."
     
     # Run SWE-agent
-    if sweagent run \
-        --config "$CONFIG_PATH" \
-        --agent.model.name "$MODEL_NAME" \
-        --agent.model.per_instance_cost_limit 0.0 \
-        --agent.model.total_cost_limit 0.0 \
-        --env.repo.github_url "$REPO_URL" \
-        --env.repo.base_commit "$BASE_COMMIT" \
-        --problem_statement.path "$PROBLEM_STATEMENT_FILE" \
-        --problem_statement.id "$INSTANCE_ID" \
-        --output_dir "$OUTPUT_DIR" \
-        --env.deployment.image "python:3.12"; then
+    if [ -n "$BASE_URL" ]; then
+        SWEAGENT_CMD="sweagent run \
+            --config \"$CONFIG_PATH\" \
+            --agent.model.name \"$MODEL_NAME\" \
+            --agent.model.api_base \"$BASE_URL\" \
+            --agent.model.per_instance_cost_limit 0.0 \
+            --agent.model.total_cost_limit 0.0 \
+            --env.repo.github_url \"$REPO_URL\" \
+            --env.repo.base_commit \"$BASE_COMMIT\" \
+            --problem_statement.path \"$PROBLEM_STATEMENT_FILE\" \
+            --problem_statement.id \"$INSTANCE_ID\" \
+            --output_dir \"$OUTPUT_DIR\" \
+            --env.deployment.image \"python:3.12\""
+    else
+        SWEAGENT_CMD="sweagent run \
+            --config \"$CONFIG_PATH\" \
+            --agent.model.name \"$MODEL_NAME\" \
+            --agent.model.per_instance_cost_limit 0.0 \
+            --agent.model.total_cost_limit 0.0 \
+            --env.repo.github_url \"$REPO_URL\" \
+            --env.repo.base_commit \"$BASE_COMMIT\" \
+            --problem_statement.path \"$PROBLEM_STATEMENT_FILE\" \
+            --problem_statement.id \"$INSTANCE_ID\" \
+            --output_dir \"$OUTPUT_DIR\" \
+            --env.deployment.image \"python:3.12\""
+    fi
+    
+    if eval "$SWEAGENT_CMD"; then
         
         echo "✓ Successfully processed instance $i: $INSTANCE_ID"
         SUCCESSFUL_RUNS=$((SUCCESSFUL_RUNS + 1))

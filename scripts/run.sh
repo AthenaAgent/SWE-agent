@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script to generate prediction file for a single instance from AthenaAgent42/ansible-swe-bench-pro dataset
-# Usage: ./run.sh [instance_index] [model_name] [config_path]
+# Usage: ./run.sh [instance_index] [model_name] [config_path] [base_url]
 
 set -e  # Exit on any error
 
@@ -9,6 +9,7 @@ set -e  # Exit on any error
 INSTANCE_INDEX=${1:-0}  # Default to first instance (index 0)
 MODEL_NAME=${2:-"gpt-4o"}  # Default model
 CONFIG_PATH=${3:-"config/default.yaml"}  # Default config
+BASE_URL=${4:-""}  # Optional custom base URL for OpenAI-compatible endpoint
 
 # Dataset information
 DATASET_NAME="AthenaAgent42/ansible-swe-bench-pro"
@@ -23,6 +24,9 @@ echo "Dataset: $DATASET_NAME"
 echo "Instance Index: $INSTANCE_INDEX"
 echo "Model: $MODEL_NAME"
 echo "Config: $CONFIG_PATH"
+if [ -n "$BASE_URL" ]; then
+    echo "Base URL: $BASE_URL"
+fi
 echo "Output Directory: $OUTPUT_DIR"
 echo "======================================"
 
@@ -97,17 +101,32 @@ echo "Created problem statement file: $PROBLEM_STATEMENT_FILE"
 echo "Running SWE-agent..."
 
 # Run SWE-agent
-sweagent run \
-    --config "$CONFIG_PATH" \
-    --agent.model.name "$MODEL_NAME" \
-    --agent.model.per_instance_cost_limit 0.0 \
-    --agent.model.total_cost_limit 0.0 \
-    --env.repo.github_url "$REPO_URL" \
-    --env.repo.base_commit "$BASE_COMMIT" \
-    --problem_statement.path "$PROBLEM_STATEMENT_FILE" \
-    --problem_statement.id "$INSTANCE_ID" \
-    --output_dir "$OUTPUT_DIR" \
-    --env.deployment.image "python:3.12"
+if [ -n "$BASE_URL" ]; then
+    sweagent run \
+        --config "$CONFIG_PATH" \
+        --agent.model.name "$MODEL_NAME" \
+        --agent.model.api_base "$BASE_URL" \
+        --agent.model.per_instance_cost_limit 0.0 \
+        --agent.model.total_cost_limit 0.0 \
+        --env.repo.github_url "$REPO_URL" \
+        --env.repo.base_commit "$BASE_COMMIT" \
+        --problem_statement.path "$PROBLEM_STATEMENT_FILE" \
+        --problem_statement.id "$INSTANCE_ID" \
+        --output_dir "$OUTPUT_DIR" \
+        --env.deployment.image "python:3.12"
+else
+    sweagent run \
+        --config "$CONFIG_PATH" \
+        --agent.model.name "$MODEL_NAME" \
+        --agent.model.per_instance_cost_limit 0.0 \
+        --agent.model.total_cost_limit 0.0 \
+        --env.repo.github_url "$REPO_URL" \
+        --env.repo.base_commit "$BASE_COMMIT" \
+        --problem_statement.path "$PROBLEM_STATEMENT_FILE" \
+        --problem_statement.id "$INSTANCE_ID" \
+        --output_dir "$OUTPUT_DIR" \
+        --env.deployment.image "python:3.12"
+fi
 
 echo "======================================"
 echo "SWE-agent run completed!"
