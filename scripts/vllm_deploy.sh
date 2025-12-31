@@ -6,8 +6,8 @@ vllm serve EssentialAI/rnj-1-instruct \
   --host 0.0.0.0 --port 8000 \
   --served-model-name rnj-1-8b-instruct \
   --tensor-parallel-size 2 \
-  --dtype float16 \
-  --max-model-len 32K \
+  --dtype bfloat16 \
+  --max-model-len 32768 \
   --kv-cache-dtype fp8 \
   --calculate-kv-scales \
   --enable-chunked-prefill \
