@@ -11,8 +11,12 @@ vllm serve EssentialAI/rnj-1-instruct \
   --kv-cache-dtype fp8 \
   --calculate-kv-scales \
   --enable-chunked-prefill \
-  --gpu-memory-utilization 0.90 \
-  --max-num-seqs 2 \
+  --max-num-seqs 1 \
+  --max-num-batched-tokens 32768 \
+  --gpu-memory-utilization 0.85 \
+  --enforce-eager \
+  --swap-space 16 \
+  --cpu-offload-gb 4 \
   --enable-auto-tool-choice \
   --tool-call-parser hermes \
   --api-key "$VLLM_API_KEY"
