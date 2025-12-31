@@ -45,21 +45,22 @@ dataset_name = sys.argv[2]
 split = sys.argv[3]
 
 # Load dataset (cache will be used for subsequent calls)
-print(f"Loading dataset {dataset_name}...", file=sys.stderr)
+print(f"Loading dataset {dataset_name}...")
 ds = load_dataset(dataset_name, split=split)
 
 if instance_index >= len(ds):
-    print(f"Error: Instance index {instance_index} is out of range. Dataset has {len(ds)} instances.", file=sys.stderr)
+    print(f"Error: Instance index {instance_index} is out of range. Dataset has {len(ds)} instances.")
     sys.exit(1)
 
 # Get the specific instance
 instance = ds[instance_index]
 
-print(f"Extracted instance {instance_index}: {instance['instance_id']}", file=sys.stderr)
-print(f"Repository: {instance['repo']}", file=sys.stderr)
-print(f"Base commit: {instance['base_commit']}", file=sys.stderr)
+print(f"Extracted instance {instance_index}: {instance['instance_id']}")
+print(f"Repository: {instance['repo']}")
+print(f"Base commit: {instance['base_commit']}")
 
 # Print instance data as JSON for the shell script to use
+print("INSTANCE_DATA_JSON:")
 print(json.dumps(instance, indent=2))
 EOF
 
@@ -79,7 +80,7 @@ for ((i=START_INDEX; i<END_INDEX; i++)); do
     
     # Extract instance data
     echo "Extracting instance data..."
-    INSTANCE_DATA=$(python /tmp/extract_instance_batch.py "$i" "$DATASET_NAME" "$DATASET_SPLIT" 2>&1)
+    INSTANCE_OUTPUT=$(python /tmp/extract_instance_batch.py "$i" "$DATASET_NAME" "$DATASET_SPLIT")
     
     # Check if extraction was successful
     if [ $? -ne 0 ]; then
@@ -89,8 +90,8 @@ for ((i=START_INDEX; i<END_INDEX; i++)); do
         continue
     fi
     
-    # Parse the instance data
-    INSTANCE_ID=$(echo "$INSTANCE_DATA" | tail -n +4 | python -c "
+    # Parse the instance data using the marker approach (same as run.sh)
+    INSTANCE_ID=$(echo "$INSTANCE_OUTPUT" | grep -A 100 "INSTANCE_DATA_JSON:" | tail -n +2 | python -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -107,19 +108,19 @@ except Exception as e:
         continue
     fi
     
-    REPO_URL=$(echo "$INSTANCE_DATA" | tail -n +4 | python -c "
+    REPO_URL=$(echo "$INSTANCE_OUTPUT" | grep -A 100 "INSTANCE_DATA_JSON:" | tail -n +2 | python -c "
 import sys, json
 data = json.load(sys.stdin)
 print('https://github.com/' + data['repo'])
 ")
     
-    BASE_COMMIT=$(echo "$INSTANCE_DATA" | tail -n +4 | python -c "
+    BASE_COMMIT=$(echo "$INSTANCE_OUTPUT" | grep -A 100 "INSTANCE_DATA_JSON:" | tail -n +2 | python -c "
 import sys, json
 data = json.load(sys.stdin)
 print(data['base_commit'])
 ")
     
-    PROBLEM_STATEMENT=$(echo "$INSTANCE_DATA" | tail -n +4 | python -c "
+    PROBLEM_STATEMENT=$(echo "$INSTANCE_OUTPUT" | grep -A 100 "INSTANCE_DATA_JSON:" | tail -n +2 | python -c "
 import sys, json
 data = json.load(sys.stdin)
 print(data['problem_statement'])
