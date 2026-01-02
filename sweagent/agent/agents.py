@@ -376,6 +376,12 @@ class RetryAgent(AbstractAgent):
             data["info"]["rloop_model_stats"] = self._rloop.review_model_stats.model_dump()
             # Overwrite model stats with total stats
             data["info"]["model_stats"] = self._total_instance_stats.model_dump()
+            # Aggregate total execution time across all attempts
+            total_execution_time = sum(
+                attempt.get("info", {}).get("total_execution_time", 0.0)
+                for attempt in self._attempt_data
+            )
+            data["info"]["total_execution_time"] = total_execution_time
             if isinstance(self._rloop, ChooserRetryLoop):
                 data["info"]["chooser"] = (
                     self._rloop._chooser_output.model_dump() if self._rloop._chooser_output else {}
@@ -497,6 +503,7 @@ class DefaultAgent(AbstractAgent):
         #: after 5 of them.
         self._n_consecutive_timeouts = 0
         self._total_execution_time = 0.0
+        self._run_start_time: float | None = None
 
     @classmethod
     def from_config(cls, config: DefaultAgentConfig) -> Self:
@@ -588,6 +595,7 @@ class DefaultAgent(AbstractAgent):
         # Save/reset some attributes
         self.traj_path = output_dir / (self._problem_statement.id + ".traj")
         self.logger.info("Trajectory will be saved to %s", self.traj_path)
+        self._run_start_time = time.perf_counter()
 
         self._chook.on_tools_installation_started()
         self.tools.install(self._env)
@@ -1256,6 +1264,11 @@ class DefaultAgent(AbstractAgent):
         self.info["exit_status"] = step_output.exit_status  # type: ignore
         self.info.update(self._get_edited_files_with_context(patch=step_output.submission or ""))  # type: ignore
         self.info["model_stats"] = self.model.stats.model_dump()
+        # Calculate total wall-clock time from start of run
+        if self._run_start_time is not None:
+            self.info["total_execution_time"] = time.perf_counter() - self._run_start_time
+        else:
+            self.info["total_execution_time"] = 0.0
 
         self.add_step_to_trajectory(step_output)
 

