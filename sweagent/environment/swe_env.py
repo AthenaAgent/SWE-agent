@@ -162,7 +162,7 @@ class SWEEnv:
                 check="raise",
                 error_msg="Failed to clean repository",
                 # Sometimes this is slow because it rebuilds some index
-                timeout=120,
+                timeout=600,
             )
 
     def close(self) -> None:
@@ -181,6 +181,12 @@ class SWEEnv:
         """
         self._chook.on_start_deployment()
         asyncio.run(self.deployment.start())
+        
+        # Increase runtime timeout for Docker deployments to handle large repositories
+        # The default 0.15s is too short for HTTP communication with containers
+        if hasattr(self.deployment, '_runtime_timeout'):
+            self.deployment._runtime_timeout = 120.0
+        
         asyncio.run(
             self.deployment.runtime.create_session(
                 CreateBashSessionRequest(startup_source=["/root/.bashrc"], startup_timeout=10)
